@@ -1,20 +1,59 @@
 import { Box, Text, TextField, Image, Button } from "@skynexui/components";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import appConfig from "../config.json";
+import { createClient } from '@supabase/supabase-js'
+import { useRouter } from "next/router";
+import { ButtonSendSticker } from "../src/components/ButtonSendSticker";
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzUzNDQwOSwiZXhwIjoxOTU5MTEwNDA5fQ.W7-U4GAo8oSrENYPuhx3qcVErajEjZ6TRMWRR8_kt_4'
+const SUPABASE_URL = 'https://avodjlrdappqpmvppawt.supabase.co'
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+function updateChat(handleNewMessage){
+    return supabaseClient.from('messages')
+    .on("INSERT", (newMessage)=>{
+        handleNewMessage(newMessage.new);
+    })
+    .subscribe()
+}
 
 export default function ChatPage() {
-  // Sua lógica vai aqui
-  const [mensagem, setMensagem] = useState("");
-  const [chat, setChat] = useState([]);
+    // Sua lógica vai aqui
+    const [mensagem, setMensagem] = useState("");
+    const [chat, setChat] = useState([]);
+    const roteamento = useRouter();
+    const usuarioLogado = roteamento.query.username || 'github';
+    const [loading, setLoading] = React.useState(true);
 
+    useEffect(() => {
+        setTimeout(() => setLoading(false), 3000)
+        
+        supabaseClient
+        .from('mensagens')
+        .select('*')
+        .then(({ data }) => {
+            setChat(data)
+        })
+
+        const update = updateChat((newMessage)=>{
+            setChat((messageList)=>{
+                return [
+                    newMessage,
+                    ...messageList,
+                ]
+            })
+        })
+        
+    },[])
+    
   function handleChat(valor) {
     const mensagem = {
-      id: chat.length,
-      de: "lucasufc",
+      de: usuarioLogado,
       texto: valor,
     };
-    setChat([mensagem, ...chat]);
-    setMensagem("");
+    supabaseClient.from('mensagens')
+    .insert([mensagem])
+    .then(setMensagem(""))
   }
   // ./Sua lógica vai aqui
   return (
@@ -83,9 +122,29 @@ export default function ChatPage() {
                 resize: "none",
                 borderRadius: "5px",
                 padding: "6px 8px",
+                verticalAlign: "middle",
                 backgroundColor: appConfig.theme.colors.neutrals[800],
                 marginRight: "12px",
                 color: appConfig.theme.colors.neutrals[200],
+              }}
+            />
+
+            <ButtonSendSticker onStickerClick={(sticker) => {
+                handleChat(':sticker:' + sticker)
+            }}/>
+
+
+            <Button
+              type="button"
+              label="Enviar"
+              onClick={() => {
+                  handleChat(mensagem)
+              }}
+              buttonColors={{
+                contrastColor: appConfig.theme.colors.neutrals["000"],
+                mainColor: appConfig.theme.colors.primary[500],
+                mainColorLight: appConfig.theme.colors.primary[400],
+                mainColorStrong: appConfig.theme.colors.primary[600],
               }}
             />
           </Box>
@@ -125,9 +184,11 @@ function MessageList(props) {
     <Box
       tag="ul"
       styleSheet={{
-        overflow: "scroll",
+        overflow: "auto",
         display: "flex",
-        flexDirection: "column-reverse",
+        flexDirection: "column",
+        wordBreak:"break-word",
+        justifyContent: "flex-end",
         flex: 1,
         color: appConfig.theme.colors.neutrals["000"],
         marginBottom: "16px",
@@ -176,7 +237,11 @@ function MessageList(props) {
                 {new Date().toLocaleDateString()}
               </Text>
             </Box>
-            {mensagem.texto}
+            {mensagem.texto.startsWith(':sticker:')? (
+               <Image src={mensagem.texto.replace(':sticker:','')} />
+            ): (
+                mensagem.texto
+            )}
           </Text>
         );
       })}

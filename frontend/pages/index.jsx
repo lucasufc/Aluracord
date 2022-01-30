@@ -21,7 +21,7 @@ function Title({ children }) {
 }
 
 export default function PaginaInicial() {
-  const [userName, setUserName] = useState("");
+  const [username, setUsername] = useState("");
   const roteamento = useRouter();
   return (
     <>
@@ -61,8 +61,7 @@ export default function PaginaInicial() {
             as="form"
             onSubmit={function (event) {
               event.preventDefault();
-              roteamento.push("/chat");
-              // window.location.href = '/chat';
+              roteamento.push(`/chat?username=${username}`);
             }}
             styleSheet={{
               display: "flex",
@@ -86,10 +85,10 @@ export default function PaginaInicial() {
             </Text>
 
             <TextField
-              value={userName}
+              value={username}
               onChange={function (event) {
                 const valor = event.target.value;
-                setUserName(valor);
+                setUsername(valor);
               }}
               fullWidth
               textFieldColors={{
@@ -116,7 +115,7 @@ export default function PaginaInicial() {
           {/* Formulário */}
 
           {/* Photo Area */}
-          {userName.length ?
+          {username.length ?
           <Box
             styleSheet={{
               display: "flex",
@@ -137,7 +136,7 @@ export default function PaginaInicial() {
                 borderRadius: "50%",
                 marginBottom: "16px",
               }}
-              src={`https://github.com/${userName}.png`}
+              src={`https://github.com/${username}.png`}
             />
             <Text
               variant="body4"
@@ -148,7 +147,7 @@ export default function PaginaInicial() {
                 borderRadius: "1000px",
               }}
             >
-              {userName}
+              {username}
             </Text>
           </Box> : ''}
           
